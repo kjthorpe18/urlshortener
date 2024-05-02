@@ -5,74 +5,66 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-import com.kthorpe.urlshortener.entity.UrlEntity;
 import com.kthorpe.urlshortener.exception.EncodingException;
-import com.kthorpe.urlshortener.repository.IUrlRepository;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+
+import java.util.HashMap;
 
 @SpringBootTest
 public class EncoderServiceTests {
 
     @Autowired EncoderService encoderService;
-    @MockBean IUrlRepository urlRepository;
-    @Captor ArgumentCaptor<UrlEntity> urlEntityArgumentCaptor;
+    @MockBean(name = "urlToEncodedCache") HashMap<String, String> urlToEncodedCache;
+    @MockBean(name = "encodedToUrlCache") HashMap<String, String> encodedToUrlCache;
 
     @Test
-    public void testEncodeUrl_notInDb() throws EncodingException {
+    public void testEncodeUrl_notInCache() throws EncodingException {
         // Set up
-        UrlEntity urlMock = mock(UrlEntity.class);
-        when(urlRepository.findByUrl(anyString())).thenReturn(null);
-        when(urlRepository.save(any())).thenReturn(urlMock);
+        when(urlToEncodedCache.get(anyString())).thenReturn(null);
+        when(urlToEncodedCache.put(anyString(), anyString())).thenReturn(null);
 
         // Execute
         String encodedUrl = encoderService.encodeUrl("https://example.com/hello");
 
         // Assert
-        verify(urlRepository).findByUrl("https://example.com/hello");
-        verify(urlRepository).save(urlEntityArgumentCaptor.capture());
+        verify(urlToEncodedCache).get("https://example.com/hello");
+        verify(urlToEncodedCache).put(eq("https://example.com/hello"), anyString());
         assertNotNull(encodedUrl);
-        assertEquals(encodedUrl, urlEntityArgumentCaptor.getValue().getEncodedUrl());
-        assertEquals("https://example.com/hello", urlEntityArgumentCaptor.getValue().getUrl());
     }
 
     @Test
     public void testEncodeUrl_collisionRepeatsUntilNotFound() throws EncodingException {
-        UrlEntity urlMock = mock(UrlEntity.class);
-        when(urlRepository.findByUrl(anyString())).thenReturn(null);
-        when(urlRepository.save(any())).thenReturn(urlMock);
+        String oldValue = "https://example.com/some/old/value";
+        when(urlToEncodedCache.get(anyString())).thenReturn(null);
+        when(urlToEncodedCache.put(anyString(), anyString())).thenReturn(oldValue);
 
         // First two generations will collide, third will not
-        when(urlRepository.findByEncodedUrl(anyString()))
-                .thenReturn(urlMock)
-                .thenReturn(urlMock)
+        when(encodedToUrlCache.get(anyString()))
+                .thenReturn(oldValue)
+                .thenReturn(oldValue)
                 .thenReturn(null);
 
         String encodedUrl = encoderService.encodeUrl("https://example.com/hello");
 
-        verify(urlRepository).findByUrl("https://example.com/hello");
-        verify(urlRepository, times(3)).findByEncodedUrl(anyString());
-        verify(urlRepository).save(urlEntityArgumentCaptor.capture());
+        verify(urlToEncodedCache).get("https://example.com/hello");
+        verify(encodedToUrlCache, times(3)).get(anyString());
+        verify(urlToEncodedCache).put(eq("https://example.com/hello"), anyString());
 
         assertNotNull(encodedUrl);
-        assertEquals(encodedUrl, urlEntityArgumentCaptor.getValue().getEncodedUrl());
-        assertEquals("https://example.com/hello", urlEntityArgumentCaptor.getValue().getUrl());
     }
 
     @Test
-    public void testEncodeUrl_inDb() throws EncodingException {
-        UrlEntity savedUrl = new UrlEntity("https://example.com/hello", "http://short.ly/HUgtSC");
-        when(urlRepository.findByUrl(anyString())).thenReturn(savedUrl);
+    public void testEncodeUrl_inCache() throws EncodingException {
+        when(urlToEncodedCache.get("https://example.com/hello")).thenReturn("http://short.ly/HUgtSC");
 
         String encodedUrl = encoderService.encodeUrl("https://example.com/hello");
 
-        verify(urlRepository).findByUrl("https://example.com/hello");
-        verify(urlRepository, never()).save(any(UrlEntity.class));
-        assertEquals(encodedUrl, savedUrl.getEncodedUrl());
+        verify(urlToEncodedCache).get("https://example.com/hello");
+        verify(urlToEncodedCache, never()).put(anyString(), anyString());
+        assertEquals(encodedUrl, "http://short.ly/HUgtSC");
     }
 }

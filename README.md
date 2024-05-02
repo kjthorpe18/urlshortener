@@ -6,8 +6,8 @@ An application which encodes and decodes URLs. It is a REST API which exposes tw
 - `/decode`: decodes a URL to its original form. For example, `http://short.est/fnIeFf` would decode
   to `https://example.com/hello/world`
 
-The application stores data in memory using an H2 database, and so data is not persisted between sessions. I.e. an encoded
-URL can only be decoded within the same session.
+The application stores data in memory, and so data is not persisted between sessions. i.e. an encoded URL can only be
+decoded within the same session.
 
 ### Configuration
 

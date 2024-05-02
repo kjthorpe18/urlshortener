@@ -3,9 +3,7 @@ package com.kthorpe.urlshortener.service;
 import static org.apache.commons.text.CharacterPredicates.DIGITS;
 import static org.apache.commons.text.CharacterPredicates.LETTERS;
 
-import com.kthorpe.urlshortener.entity.UrlEntity;
 import com.kthorpe.urlshortener.exception.EncodingException;
-import com.kthorpe.urlshortener.repository.IUrlRepository;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,6 +11,8 @@ import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
 
 @Slf4j
 @Service
@@ -31,11 +31,9 @@ public class EncoderService {
     @Value("${path.length}")
     private int pathLength;
 
-    // Ideally, the DB table would be created with a hash index for O(1) lookups, and we could even
-    // add a caching layer in front of this to reduce calls per-session.
-    // Alternatively, for local use we could use a HashMap here for O(1) lookup. For demonstration
-    // of how a data layer could work, this is sufficient.
-    @Autowired private IUrlRepository urlRepository;
+    // Hash tables for storing original and encoded URLs for bidirectional lookups
+    @Autowired private HashMap<String, String> urlToEncodedCache;
+    @Autowired private HashMap<String, String> encodedToUrlCache;
 
     /**
      * Given an un-encoded URL, find a previously generated shortened URL or generate a new one
@@ -44,51 +42,50 @@ public class EncoderService {
      * @return The shortened URL for the given URL
      */
     public String encodeUrl(String url) throws EncodingException {
-        UrlEntity urlEntity = urlRepository.findByUrl(url);
+        String encoded = urlToEncodedCache.get(url);
 
-        if (urlEntity != null) {
-            log.info("URL found in repository. Returning previously generated short URL.");
-            return urlEntity.getEncodedUrl();
+        if (encoded != null) {
+            log.info("URL found in cache. Returning previously generated short URL.");
+            return encoded;
         }
 
-        log.info("URL not found in repository. Generating URL and storing.");
-
-        String encoded = generateAndSearch();
-        urlEntity = new UrlEntity(url, encoded);
-        urlRepository.save(urlEntity);
+        log.info("URL not found in cache. Generating URL and storing.");
+        encoded = generateAndSearch(url);
+        urlToEncodedCache.put(url, encoded);
 
         return encoded;
     }
 
     /**
-     * Generates a URL and checks if it is in the database.
+     * Generates a unique URL
      *
-     * <p>Repeat up to 100 times or until one is not found to ensure a generated URL is unique.
-     * Naive approach.
+     * <p>Generates a new URL and checks if it already exists in the cache. Repeat up to 100 times
+     * or until one is not found to ensure a generated URL is unique.
      *
+     * @param url The unencoded URL
      * @return A URL which is not in the database
      */
-    private String generateAndSearch() throws EncodingException {
-        String encoded;
-        UrlEntity search;
+    private String generateAndSearch(String url) throws EncodingException {
+        String newEncoded;
+        String originalUrlSearch;
         int count = 1;
 
         do {
-            log.info(
-                    "Generating a URL and checking that it has not already been used. Searches: {}",
-                    count);
-
-            encoded = generateShortUrl(); // Method to generate a random URL
-            search = urlRepository.findByEncodedUrl(encoded);
+            log.info("Generating a URL and checking for uniqueness. Searches: {}", count);
+            newEncoded = generateShortUrl();
+            originalUrlSearch = encodedToUrlCache.get(newEncoded);
             count++;
-        } while (search != null && count <= 100);
+        } while (originalUrlSearch != null && count <= 100);
 
-        // If we broke from the loop without generating a unique URL, throw an exception
-        if (search != null) {
+        // If we've searched this many times and still haven't found a unique URL, throw an
+        // exception
+        if (originalUrlSearch != null) {
             throw new EncodingException("Unable to generate unique URL");
         }
 
-        return encoded;
+        // Add the new pair to the cache
+        encodedToUrlCache.put(newEncoded, url);
+        return newEncoded;
     }
 
     /**

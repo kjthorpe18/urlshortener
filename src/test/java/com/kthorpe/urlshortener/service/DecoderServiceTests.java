@@ -5,38 +5,37 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-import com.kthorpe.urlshortener.entity.UrlEntity;
 import com.kthorpe.urlshortener.exception.DecodingException;
-import com.kthorpe.urlshortener.repository.IUrlRepository;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
+import java.util.HashMap;
+
 @SpringBootTest
 public class DecoderServiceTests {
 
     @Autowired DecoderService decoderService;
-    @MockBean IUrlRepository urlRepository;
+    @MockBean(name = "encodedToUrlCache") HashMap<String, String> encodedToUrlCache;
 
     @Test
-    public void decodeUrl_inDb() throws DecodingException {
-        UrlEntity savedUrl = new UrlEntity("https://example.com/hello", "http://short.ly/HUgtSC");
-        when(urlRepository.findByEncodedUrl(anyString())).thenReturn(savedUrl);
+    public void decodeUrl_inCache() throws DecodingException {
+        when(encodedToUrlCache.get(anyString())).thenReturn("https://example.com/hello");
 
         String originalUrl = decoderService.decodeUrl("http://short.ly/HUgtSC");
 
-        verify(urlRepository).findByEncodedUrl(savedUrl.getEncodedUrl());
-        assertEquals(originalUrl, savedUrl.getUrl());
+        verify(encodedToUrlCache).get("http://short.ly/HUgtSC");
+        assertEquals(originalUrl, "https://example.com/hello");
     }
 
     @Test
-    public void decodeUrl_notInDbThrowsException() {
-        when(urlRepository.findByEncodedUrl(anyString())).thenReturn(null);
+    public void decodeUrl_notInCacheThrowsException() {
+        when(encodedToUrlCache.get(anyString())).thenReturn(null);
 
         assertThrows(
                 DecodingException.class, () -> decoderService.decodeUrl("http://short.ly/HUgtSC"));
-        verify(urlRepository).findByEncodedUrl(anyString());
+        verify(encodedToUrlCache).get(anyString());
     }
 }
