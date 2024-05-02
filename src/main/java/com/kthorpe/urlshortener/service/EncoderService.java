@@ -26,6 +26,9 @@ public class EncoderService {
     @Value("${base.url}")
     private String baseUrl;
 
+    @Value("${path.length}")
+    private int pathLength;
+
     @Autowired private IUrlRepository urlRepository;
 
     /**
@@ -42,9 +45,9 @@ public class EncoderService {
             return urlEntity.getEncodedUrl();
         }
 
-        log.info("URL not found in repository. Generating URL and storing");
+        log.info("URL not found in repository. Generating URL and storing.");
 
-        String encoded = generateShortUrl();
+        String encoded = generateAndSearch();
         urlEntity = new UrlEntity(url, encoded);
         urlRepository.save(urlEntity);
 
@@ -52,11 +55,35 @@ public class EncoderService {
     }
 
     /**
-     * Generates a shortened URL
+     * Generates a URL and checks if it is in the database. Repeat up to 100 times or until one is
+     * not found to ensure a generated URL is unique.
+     *
+     * @return A URL which is not in the database
+     */
+    private String generateAndSearch() {
+        String encoded;
+        UrlEntity search;
+        int count = 1;
+
+        do {
+            log.info(
+                    "Generating a URL and checking that it has not already been used. Searches: {}",
+                    count);
+
+            encoded = generateShortUrl(); // Method to generate a random URL
+            search = urlRepository.findByEncodedUrl(encoded);
+            count++;
+        } while (search != null && count < 100);
+
+        return encoded;
+    }
+
+    /**
+     * Generates a random URL
      *
      * @return The generated URL string
      */
     private String generateShortUrl() {
-        return baseUrl.concat(generator.generate(6));
+        return baseUrl + "/" + generator.generate(pathLength);
     }
 }

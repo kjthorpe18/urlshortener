@@ -41,6 +41,29 @@ public class EncoderServiceTests {
     }
 
     @Test
+    public void testEncodeUrl_collisionRepeatsUntilNotFound() {
+        UrlEntity urlMock = mock(UrlEntity.class);
+        when(urlRepository.findByUrl(anyString())).thenReturn(null);
+        when(urlRepository.save(any())).thenReturn(urlMock);
+
+        // First two generations will collide, third will not
+        when(urlRepository.findByEncodedUrl(anyString()))
+                .thenReturn(urlMock)
+                .thenReturn(urlMock)
+                .thenReturn(null);
+
+        String encodedUrl = encoderService.encodeUrl("https://example.com/hello");
+
+        verify(urlRepository).findByUrl("https://example.com/hello");
+        verify(urlRepository, times(3)).findByEncodedUrl(anyString());
+        verify(urlRepository).save(urlEntityArgumentCaptor.capture());
+
+        assertNotNull(encodedUrl);
+        assertEquals(encodedUrl, urlEntityArgumentCaptor.getValue().getEncodedUrl());
+        assertEquals("https://example.com/hello", urlEntityArgumentCaptor.getValue().getUrl());
+    }
+
+    @Test
     public void testEncodeUrl_inDb() {
         UrlEntity savedUrl = new UrlEntity("https://example.com/hello", "http://short.ly/HUgtSC");
         when(urlRepository.findByUrl(anyString())).thenReturn(savedUrl);
