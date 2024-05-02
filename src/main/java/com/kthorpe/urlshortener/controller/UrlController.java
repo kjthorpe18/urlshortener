@@ -1,10 +1,13 @@
 package com.kthorpe.urlshortener.controller;
 
+import com.kthorpe.urlshortener.exception.DecodingException;
 import com.kthorpe.urlshortener.exception.ValidationException;
 import com.kthorpe.urlshortener.resource.UrlResource;
 import com.kthorpe.urlshortener.service.DecoderService;
 import com.kthorpe.urlshortener.service.EncoderService;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -54,14 +57,17 @@ public class UrlController {
         try {
             validateUrl(urlResource);
             String decodedUrl = decoderService.decodeUrl(urlResource.getUrl());
+
             return new UrlResource(decodedUrl);
         } catch (ValidationException e) {
             log.error("Request failed validation: {}", e.getMessage(), e);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
-        } catch (Exception e) {
+        } catch (DecodingException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+        }
+        catch (Exception e) {
             log.error("Error while decoding URL", e);
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Invalid request", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), e);
         }
     }
 
