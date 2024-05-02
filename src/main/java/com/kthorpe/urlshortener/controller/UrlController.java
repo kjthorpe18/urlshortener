@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 public class UrlController {
 
     private static String URL_PATTERN =
-            "^(https?://)([a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)+)(/[a-zA-Z0-9_/.-]*)?(\\?[a-zA-Z0-9&=._-]*)?(#[a-zA-Z0-9_-]*)?$";
+            "^(https?://)([a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)+)(:[0-9]{1,5})?(/[a-zA-Z0-9_/.-]*)?(\\?[a-zA-Z0-9&=._-]*)?(#[a-zA-Z0-9_-]*)?$";
     private static final Pattern pattern = Pattern.compile(URL_PATTERN);
 
     EncoderService encoderService;

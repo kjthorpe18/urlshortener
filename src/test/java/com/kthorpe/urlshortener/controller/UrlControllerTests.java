@@ -29,14 +29,15 @@ public class UrlControllerTests {
     @MockBean private DecoderService decoderService;
 
     @Test
-    public void testEncodeUrl() throws Exception {
+    public void testEncodeUrl_passValidation() throws Exception {
         List<String> validUrls =
                 List.of(
                         "https://example.com/hello",
-                        "http://exampLe.com/hello",
                         "https://www.exaMple.com/hello",
-                        "http://aaa.com?lang=fr",
-                        "http://www.example456.ui");
+                        "http://aAa.com?lang=fr",
+                        "http://www.exwithport.ui:455",
+                        "http://www.exfragment.ui?lang=fr#one",
+                        "https://www.example.com:443/path/to/page?query1=value1&query2=value2#section");
 
         when(encoderService.encodeUrl(anyString())).thenReturn("http://aDb.cn/aLiw4");
 
