@@ -31,6 +31,10 @@ public class EncoderService {
     @Value("${path.length}")
     private int pathLength;
 
+    // Ideally, the DB table would be created with a hash index for O(1) lookups, and we could even
+    // add a caching layer in front of this to reduce calls per-session.
+    // Alternatively, for local use we could use a HashMap here for O(1) lookup. For demonstration
+    // of how a data layer could work, this is sufficient.
     @Autowired private IUrlRepository urlRepository;
 
     /**
@@ -59,7 +63,8 @@ public class EncoderService {
     /**
      * Generates a URL and checks if it is in the database.
      *
-     * <p>Repeat up to 100 times or until one is not found to ensure a generated URL is unique. Naive approach.
+     * <p>Repeat up to 100 times or until one is not found to ensure a generated URL is unique.
+     * Naive approach.
      *
      * @return A URL which is not in the database
      */
