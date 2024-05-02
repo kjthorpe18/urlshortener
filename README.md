@@ -66,8 +66,14 @@ To run tests, run the following command:
 mvn test
 ```
 
-or, to run a full build, including tests
+Or, to run a full build, including tests:
 
 ```sh
 mvn clean install
+```
+
+Then, run the created `jar` (note: version may differ):
+
+```sh
+java -jar target/urlshortener-0.0.1.jar
 ```

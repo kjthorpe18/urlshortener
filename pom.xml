@@ -12,7 +12,7 @@
 
 	<groupId>com.kthorpe</groupId>
 	<artifactId>urlshortener</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>urlshortener</name>
 	<description>URL encoding and decoding service</description>
 
