@@ -4,6 +4,7 @@ import static org.apache.commons.text.CharacterPredicates.DIGITS;
 import static org.apache.commons.text.CharacterPredicates.LETTERS;
 
 import com.kthorpe.urlshortener.entity.UrlEntity;
+import com.kthorpe.urlshortener.exception.EncodingException;
 import com.kthorpe.urlshortener.repository.IUrlRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class EncoderService {
 
+    // Generator for encoded URLs
     private static final RandomStringGenerator generator =
             new RandomStringGenerator.Builder()
                     .withinRange('0', 'z')
@@ -37,7 +39,7 @@ public class EncoderService {
      * @param url The original URL
      * @return The shortened URL for the given URL
      */
-    public String encodeUrl(String url) {
+    public String encodeUrl(String url) throws EncodingException {
         UrlEntity urlEntity = urlRepository.findByUrl(url);
 
         if (urlEntity != null) {
@@ -55,12 +57,13 @@ public class EncoderService {
     }
 
     /**
-     * Generates a URL and checks if it is in the database. Repeat up to 100 times or until one is
-     * not found to ensure a generated URL is unique.
+     * Generates a URL and checks if it is in the database.
+     *
+     * <p>Repeat up to 100 times or until one is not found to ensure a generated URL is unique. Naive approach.
      *
      * @return A URL which is not in the database
      */
-    private String generateAndSearch() {
+    private String generateAndSearch() throws EncodingException {
         String encoded;
         UrlEntity search;
         int count = 1;
@@ -73,7 +76,12 @@ public class EncoderService {
             encoded = generateShortUrl(); // Method to generate a random URL
             search = urlRepository.findByEncodedUrl(encoded);
             count++;
-        } while (search != null && count < 100);
+        } while (search != null && count <= 100);
+
+        // If we broke from the loop without generating a unique URL, throw an exception
+        if (search != null) {
+            throw new EncodingException("Unable to generate unique URL");
+        }
 
         return encoded;
     }

@@ -1,6 +1,7 @@
 package com.kthorpe.urlshortener.controller;
 
 import com.kthorpe.urlshortener.exception.DecodingException;
+import com.kthorpe.urlshortener.exception.EncodingException;
 import com.kthorpe.urlshortener.exception.ValidationException;
 import com.kthorpe.urlshortener.resource.UrlResource;
 import com.kthorpe.urlshortener.service.DecoderService;
@@ -56,6 +57,8 @@ public class UrlController {
         } catch (ValidationException e) {
             log.error("Request failed validation: {}", e.getMessage(), e);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
+        } catch (EncodingException e) {
+            throw new ResponseStatusException(HttpStatus.REQUEST_TIMEOUT, e.getMessage(), e);
         } catch (Exception e) {
             log.error("Error while encoding URL", e);
             throw new ResponseStatusException(

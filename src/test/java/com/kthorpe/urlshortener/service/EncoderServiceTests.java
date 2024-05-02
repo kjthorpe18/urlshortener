@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import com.kthorpe.urlshortener.entity.UrlEntity;
+import com.kthorpe.urlshortener.exception.EncodingException;
 import com.kthorpe.urlshortener.repository.IUrlRepository;
 
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ public class EncoderServiceTests {
     @Captor ArgumentCaptor<UrlEntity> urlEntityArgumentCaptor;
 
     @Test
-    public void testEncodeUrl_notInDb() {
+    public void testEncodeUrl_notInDb() throws EncodingException {
         // Set up
         UrlEntity urlMock = mock(UrlEntity.class);
         when(urlRepository.findByUrl(anyString())).thenReturn(null);
@@ -41,7 +42,7 @@ public class EncoderServiceTests {
     }
 
     @Test
-    public void testEncodeUrl_collisionRepeatsUntilNotFound() {
+    public void testEncodeUrl_collisionRepeatsUntilNotFound() throws EncodingException {
         UrlEntity urlMock = mock(UrlEntity.class);
         when(urlRepository.findByUrl(anyString())).thenReturn(null);
         when(urlRepository.save(any())).thenReturn(urlMock);
@@ -64,7 +65,7 @@ public class EncoderServiceTests {
     }
 
     @Test
-    public void testEncodeUrl_inDb() {
+    public void testEncodeUrl_inDb() throws EncodingException {
         UrlEntity savedUrl = new UrlEntity("https://example.com/hello", "http://short.ly/HUgtSC");
         when(urlRepository.findByUrl(anyString())).thenReturn(savedUrl);
 

@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.kthorpe.urlshortener.exception.DecodingException;
+import com.kthorpe.urlshortener.exception.EncodingException;
 import com.kthorpe.urlshortener.service.DecoderService;
 import com.kthorpe.urlshortener.service.EncoderService;
 
@@ -51,6 +52,18 @@ public class UrlControllerTests {
                     .andExpect(status().isOk())
                     .andExpect(content().string("{\"url\":\"http://aDb.cn/aLiw4\"}"));
         }
+    }
+
+    @Test
+    public void testEncodeUrl_encodingException() throws Exception {
+        when(encoderService.encodeUrl(anyString())).thenThrow(new EncodingException("Unable to generate unique URL"));
+        String jsonRequest = "{\"url\":\"https://example.com/hello\"}";
+
+        mockMvc.perform(
+                        post("/encode")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(jsonRequest))
+                .andExpect(status().isRequestTimeout());
     }
 
     @Test
