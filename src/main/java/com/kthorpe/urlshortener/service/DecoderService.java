@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class DecoderService {
 
-    @Autowired IUrlRepository urlRepository;
+    @Autowired private IUrlRepository urlRepository;
 
     /**
      * Given an encoded URL, search the DB for its original version
