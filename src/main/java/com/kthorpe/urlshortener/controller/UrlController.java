@@ -23,7 +23,18 @@ import java.util.regex.Pattern;
 public class UrlController {
 
     private static String URL_PATTERN =
-            "^(https?://)([a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)+)(:[0-9]{1,5})?(/[a-zA-Z0-9_/.-]*)?(\\?[a-zA-Z0-9&=._-]*)?(#[a-zA-Z0-9_-]*)?$";
+            "^" // Start of the string
+            + "(https?://)" // Matches 'http://' or 'https://'
+            + "([a-zA-Z0-9-]+" // Matches the first part of the domain
+            + "(\\.[a-zA-Z0-9-]+)+)" // Matches additional domain parts, each prefixed with a dot
+            + "(:[0-9]{1,5})?" // Matches a colon followed by 1 to 5 digits (port number), optional
+            + "(/[a-zA-Z0-9_/.-]*[^/])?" // Matches a path without a trailing slash, optional
+            + "/?" // Allows one optional trailing slash
+            + "(\\?[a-zA-Z0-9&=._-]*)?" // Matches a query string starting with '?', optional
+            + "(#[a-zA-Z0-9_-]*)?" // Matches a fragment identifier starting with '#', optional
+            + "$"; // End of the string
+
+
     private static final Pattern pattern = Pattern.compile(URL_PATTERN);
 
     EncoderService encoderService;

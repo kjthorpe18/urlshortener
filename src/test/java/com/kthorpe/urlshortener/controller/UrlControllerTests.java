@@ -33,7 +33,8 @@ public class UrlControllerTests {
         List<String> validUrls =
                 List.of(
                         "https://example.com/hello",
-                        "https://www.exaMple.com/hello",
+                        "https://sub.valid-domain.io/valid-path",
+                        "https://www.exaMple.com/hello/",
                         "http://aAa.com?lang=fr",
                         "http://www.exwithport.ui:455",
                         "http://www.exfragment.ui?lang=fr#one",
@@ -75,8 +76,15 @@ public class UrlControllerTests {
     }
 
     @Test
-    public void testEncodeUrl_invalidURL() throws Exception {
-        List<String> invalidUrls = List.of("notAUrl", "no.http.com", "http://a", "https://aaa");
+    public void testEncodeUrl_invalidUrlFailsValidation() throws Exception {
+        List<String> invalidUrls =
+                List.of(
+                        "notAUrl",
+                        "no.http.com",
+                        "http://a",
+                        "https://www.doubleslashes.com//",
+                        "https://www.doubleslashes.com/path//",
+                        "http://example.com/path/@invalid*char");
 
         for (String url : invalidUrls) {
             String jsonRequest = String.format("{\"url\":\"%s\"}", url);
